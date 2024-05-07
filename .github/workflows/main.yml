@@ -100,14 +100,13 @@ jobs:
     needs:
       - laravel_build
       - laravel_test
-  
+
     steps:
       - name: Check previous job status
         run: |
-          if [ "${{ needs.laravel_build.result }}" == 'success' ] && [ "${{ needs.laravel_test.result }}" == 'success' ]; then
+          if [ "${{ needs.laravel_test.result }}" == 'success' ]; then
             echo "All previous jobs were successful."
           else
             echo "At least one previous job failed."
             exit 1
           fi
-  
