@@ -103,6 +103,7 @@ jobs:
   
     steps:
       - name: Check previous job status
+        if: always()
         run: |
           if [ "${{ needs.laravel_build.result }}" == 'success' ] && [ "${{ needs.laravel_test.result }}" == 'success' ]; then
             echo "All previous jobs were successful."
