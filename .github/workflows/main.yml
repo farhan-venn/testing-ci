@@ -91,20 +91,14 @@ jobs:
       - name: Run tests
         run: ./vendor/bin/phpunit
 
-  laravel_notification:
-    name: Laravel Notification
+  notify_result:
+    name: Notify Result
     runs-on: ubuntu-latest
-    needs: laravel_test
-
+    needs: [laravel_build, laravel_test]
     steps:
-      - name: Check if laravel_test job was successful
-        uses: actions/checkout@v2
-      - name: Notification
-        env:
-          JOB_STATUS: ${{ needs.laravel_test.result }}
-        run: |
-          if [ "$JOB_STATUS" == "failure" ]; then
-            echo "Laravel test job failed."
-          elif [ "$JOB_STATUS" == "success" ]; then
-            echo "Laravel test job was successful."
-          fi
+      - name: Job success
+        if: ${{ success() }}
+        run: echo "Both jobs completed successfully."
+      - name: Job failure
+        if: ${{ failure() }}
+        run: echo "One or more jobs failed."
