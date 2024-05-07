@@ -104,6 +104,7 @@ jobs:
 
     steps:
       - name: Check if laravel_test job was successful
+        uses: actions/checkout@v2
         env:
           JOB_STATUS: ${{ needs.laravel_test.result }}
         run: |
