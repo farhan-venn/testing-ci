@@ -100,39 +100,14 @@ jobs:
     needs:
       - laravel_build
       - laravel_test
-
+  
     steps:
-      - name: Check if laravel_build job was successful
-        env:
-          BUILD_STATUS: ${{ needs.laravel_build.result }}
+      - name: Check previous job status
         run: |
-          if [ "$BUILD_STATUS" == "success" ]; then
-            echo "Laravel build job was successful."
+          if [ "${{ needs.laravel_build.result }}" == 'success' ] && [ "${{ needs.laravel_test.result }}" == 'success' ]; then
+            echo "All previous jobs were successful."
           else
-            echo "Laravel build job failed."
-            echo "build_status=failure" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Check if laravel_test job was successful
-        env:
-          TEST_STATUS: ${{ needs.laravel_test.result }}
-          BUILD_STATUS: ${{ needs.laravel_build.result }}
-        run: |
-          if [ "$TEST_STATUS" == "success" ]; then
-            echo "Laravel test job was successful."
-          else
-            echo "Laravel test job failed."
-            echo "test_status=failure" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Finalize Notification
-        if: ${{ needs.laravel_build.result != 'cancelled' && needs.laravel_test.result != 'cancelled' }}
-        run: |
-          if [ "${{ steps.Check-if-laravel-build-job-was-successful.outputs.build_status }}" == "failure" ] || [ "${{ steps.Check-if-laravel-test-job-was-successful.outputs.test_status }}" == "failure" ]; then
-            echo "At least one job failed."
+            echo "At least one previous job failed."
             exit 1
-          else
-            echo "All jobs were successful."
           fi
-        id: finalize-notification
   
