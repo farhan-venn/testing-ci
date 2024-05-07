@@ -20,7 +20,7 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.2' # Sesuaikan dengan versi PHP yang digunakan dalam proyek Laravel 11
+          php-version: "8.2"
 
       - name: Install dependencies
         run: composer install --no-ansi --no-interaction --no-progress --optimize-autoloader
@@ -37,16 +37,13 @@ jobs:
       - name: Run Migration Database
         run: php artisan migrate:fresh --seed
 
-      # - name: Install Breeze
-      #   run: php artisan breeze:install --no-interaction
-      
       - name: Setup Node.js
         uses: actions/setup-node@v2
         with:
-          node-version: '20' # Atur versi Node.js sesuai kebutuhan Anda
+          node-version: "20"
 
       - name: Install Node.js dependencies
-        run: npm install # Atau yarn install jika Anda menggunakan Yarn
+        run: npm install
 
       - name: Build Node.JS
         run: npm run build
@@ -63,7 +60,7 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.2' # Sesuaikan dengan versi PHP yang digunakan dalam proyek Laravel 11
+          php-version: "8.2"
 
       - name: Install dependencies
         run: composer install --no-ansi --no-interaction --no-progress --optimize-autoloader
@@ -80,16 +77,13 @@ jobs:
       - name: Run Migration Database
         run: php artisan migrate:fresh --seed
 
-      # - name: Install Breeze
-      #   run: php artisan breeze:install --no-interaction
-      
       - name: Setup Node.js
         uses: actions/setup-node@v2
         with:
-          node-version: '20' # Atur versi Node.js sesuai kebutuhan Anda
+          node-version: "20"
 
       - name: Install Node.js dependencies
-        run: npm install # Atau yarn install jika Anda menggunakan Yarn
+        run: npm install
 
       - name: Build Node.JS
         run: npm run build
@@ -105,11 +99,12 @@ jobs:
     steps:
       - name: Check if laravel_test job was successful
         uses: actions/checkout@v2
+      - name: Notification
         env:
           JOB_STATUS: ${{ needs.laravel_test.result }}
         run: |
-          if [ "$JOB_STATUS" == "success" ]; then
-            echo "Laravel test job was successful."
-          else
+          if [ "$JOB_STATUS" == "failure" ]; then
             echo "Laravel test job failed."
+          elif [ "$JOB_STATUS" == "success" ]; then
+            echo "Laravel test job was successful."
           fi
