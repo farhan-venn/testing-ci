@@ -94,12 +94,11 @@ jobs:
   notify_result:
     name: Notify Result
     runs-on: ubuntu-latest
-    needs: [laravel_build, laravel_test]
+    needs: laravel_test
     steps:
       - name: Job success
-        if: always() && success()
-        run: echo "Both jobs completed successfully."
+        if: ${{ success() }}
+        run: echo "Laravel Test job completed successfully."
       - name: Job failure
-        if: always() && failure()
-        run: echo "One or more jobs failed."
-        
+        if: ${{ failure() }}
+        run: echo "Laravel Test job failed."
