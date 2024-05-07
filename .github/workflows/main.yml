@@ -80,6 +80,11 @@ jobs:
     name: Report Job Status
     runs-on: ubuntu-latest
     needs: [laravel_build, laravel_test]  # Wait for both build and tests
+    on:
+      push:
+        branches: [ main ]
+      pull_request:
+        branches: [ main ]
 
     steps:
       - uses: actions/checkout@v2
