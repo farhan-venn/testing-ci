@@ -97,10 +97,10 @@ jobs:
   laravel_notification:
     name: Laravel Notification
     runs-on: ubuntu-latest
-    needs:
+    needs: 
       - laravel_build
       - laravel_test
-
+  
     steps:
       - name: Check if laravel_build job was successful
         env:
@@ -110,9 +110,9 @@ jobs:
             echo "Laravel build job was successful."
           else
             echo "Laravel build job failed."
-            exit 1
+            exit 1 # Keluar dengan status gagal
           fi
-
+  
       - name: Check if laravel_test job was successful
         env:
           TEST_STATUS: ${{ needs.laravel_test.result }}
@@ -121,6 +121,6 @@ jobs:
             echo "Laravel test job was successful."
           else
             echo "Laravel test job failed."
-            exit 1
+            exit 1 # Keluar dengan status gagal
           fi
-        
+  
