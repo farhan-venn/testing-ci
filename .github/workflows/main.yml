@@ -91,8 +91,8 @@ jobs:
     needs: [laravel_build, laravel_test] # Wait for both build and test jobs to complete
 
     steps:
-      - name: Download build and test statuses
-        uses: actions/download-artifact@v2
+      - name: Download build and test statuses (optional)
+        uses: actions/download-artifact@v2 # Optional for reference
         with:
           name: build_status
           path: build_status.txt
@@ -104,24 +104,19 @@ jobs:
 
       - name: Check job statuses and notify
         run: |
-          build_status=$(cat build_status.txt)
-          test_status=$(cat test_status.txt)
-
-          # Customize notification message based on job statuses
-          message=""
-          if [[ $build_status == "## success" ]]; then
-            message="**Laravel CI:** Build job succeeded!"
-          else
-            message="**Laravel CI:** Build job failed!"
+          # Check if previous build job succeeded
+          if [[ ! -f build_status.txt ]]; then
+            echo "**Laravel CI:** Build job was skipped!"
           fi
 
-          if [[ $test_status == "## success" ]]; then
-            message+="\n**Laravel CI:** Test job succeeded!"
-          else
-            message+="\n**Laravel CI:** Test job failed!"
+          # Check if previous test job succeeded (assuming build job ran)
+          if [[ ${{ needs.laravel_build.result }} == 'failure' ]]; then
+            echo "**Laravel CI:** Build job failed!"
+          elif [[ ! -f test_status.txt ]]; then
+            echo "**Laravel CI:** Test job was skipped!"
           fi
 
           # Replace with your notification method (e.g., Slack webhook)
-          echo "$message"  # Print message (example)
+          echo "$(cat build_status.txt)\n$(cat test_status.txt)"  # Print messages (optional)
           # curl -X POST ...  # Implement notification logic here
 
