@@ -97,8 +97,9 @@ jobs:
     needs: laravel_test
     steps:
       - name: Job success
-        if: ${{ success() }}
+        if: always() && success()
         run: echo "Laravel Test job completed successfully."
       - name: Job failure
-        if: ${{ failure() }}
+        if: always() && failure()
         run: echo "Laravel Test job failed."
+        
