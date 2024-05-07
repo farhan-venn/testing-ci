@@ -97,12 +97,10 @@ jobs:
   laravel_notification:
     name: Laravel Notification
     runs-on: ubuntu-latest
-    needs:
-      - laravel_build
-      - laravel_test
   
     steps:
       - name: Check previous job status
+        if: always()  # Job akan selalu dijalankan, terlepas dari hasil job sebelumnya
         run: |
           if [ "${{ needs.laravel_build.result }}" == 'success' ] && [ "${{ needs.laravel_test.result }}" == 'success' ]; then
             echo "All previous jobs were successful."
@@ -110,4 +108,3 @@ jobs:
             echo "At least one previous job failed."
             exit 1
           fi
-  
