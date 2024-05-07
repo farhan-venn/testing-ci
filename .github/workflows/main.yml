@@ -14,19 +14,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-
-      # Your existing steps here...
-
-      - name: Build Node.JS
-        run: |
-          npm run build
-          echo "::set-output name=build_status::success"
-
-      # Additional step to print build status for troubleshooting
-      - name: Print Build Status
-        run: echo "Build Status: ${{ steps.build_nodejs.outputs.build_status }}"
+      # Steps for Laravel Build job
 
   laravel_test:
     name: Laravel Test
@@ -34,19 +22,7 @@ jobs:
     needs: laravel_build
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-
-      # Your existing steps here...
-
-      - name: Run tests
-        run: |
-          ./vendor/bin/phpunit
-          echo "::set-output name=test_status::success"
-
-      # Additional step to print test status for troubleshooting
-      - name: Print Test Status
-        run: echo "Test Status: ${{ steps.run_tests.outputs.test_status }}"
+      # Steps for Laravel Test job
 
   notification:
     name: Notification
