@@ -60,7 +60,7 @@ jobs:
         run: ./vendor/bin/phpunit
 
   notification:
-    name: Notification
+    name: Laravel Notification
     runs-on: ubuntu-latest
     needs: [laravel_build, laravel_test]
     if: always()
