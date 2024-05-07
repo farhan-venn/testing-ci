@@ -103,7 +103,7 @@ jobs:
     needs:
       - laravel_build
       - laravel_test
-    
+
     steps:
       - name: Check previous job status
         if: always()  # Job akan selalu dijalankan, terlepas dari hasil job sebelumnya
@@ -111,6 +111,11 @@ jobs:
           if [ "${{ needs.laravel_build.result }}" == 'success' ] && [ "${{ needs.laravel_test.result }}" == 'success' ]; then
             echo "All previous jobs were successful."
           else
-            echo "At least one previous job failed, but we will continue."
+            echo "At least one previous job failed."
+            # Kirim notifikasi via email
+            echo "Sending notification..."
+            echo "Job laravel_build result: ${{ needs.laravel_build.result }}"
+            echo "Job laravel_test result: ${{ needs.laravel_test.result }}"
+            # Ganti dengan alamat email Anda
+            echo "Content of the notification email" | mail -s "Notification: Laravel CI Status" ankarsa1287@gmail.com
           fi
-  
