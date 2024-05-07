@@ -14,84 +14,102 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout code
+        uses: actions/checkout@v2
 
-      - uses: shivammathur/setup-php@v2
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
         with:
-          php-version: "8.2"
+          php-version: '8.2'
 
-      - run: composer install --no-ansi --no-interaction --no-progress --optimize-autoloader
+      - name: Install dependencies
+        run: composer install --no-ansi --no-interaction --no-progress --optimize-autoloader
 
-      - run: cp .env.example .env
+      - name: Copy file example env
+        run: cp .env.example .env
 
-      - run: php artisan key:generate
+      - name: Generate key
+        run: php artisan key:generate
 
-      - run: touch database/database.sqlite
+      - name: Create File Database
+        run: touch database/database.sqlite
 
-      - run: php artisan migrate:fresh --seed
+      - name: Run Migration Database
+        run: php artisan migrate:fresh --seed
 
-      # - name: Install Breeze
-      #   run: php artisan breeze:install --no-interaction
-
-      - uses: actions/setup-node@v2
+      - name: Setup Node.js
+        uses: actions/setup-node@v2
         with:
-          node-version: "20"
+          node-version: '20'
 
-      - run: npm install # Or yarn install if you use Yarn
+      - name: Install Node.js dependencies
+        run: npm install
 
-      - run: npm run build # Or your specific Node.js build command
+      - name: Build Node.JS
+        run: npm run build
 
   laravel_test:
     name: Laravel Test
     runs-on: ubuntu-latest
-    needs: laravel_build # Ensures tests run after build
+    needs: laravel_build
 
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout code
+        uses: actions/checkout@v2
 
-      - uses: shivammathur/setup-php@v2
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
         with:
-          php-version: "8.2"
+          php-version: '8.2'
 
-      - run: composer install --no-ansi --no-interaction --no-progress --optimize-autoloader
+      - name: Install dependencies
+        run: composer install --no-ansi --no-interaction --no-progress --optimize-autoloader
 
-      - run: cp .env.example .env
+      - name: Copy file example env
+        run: cp .env.example .env
 
-      - run: php artisan key:generate
+      - name: Generate key
+        run: php artisan key:generate
 
-      - run: touch database/database.sqlite
+      - name: Create File Database
+        run: touch database/database.sqlite
 
-      - run: php artisan migrate:fresh --seed
+      - name: Run Migration Database
+        run: php artisan migrate:fresh --seed
 
-      # - name: Install Breeze
-      #   run: php artisan breeze:install --no-interaction
-
-      - uses: actions/setup-node@v2
+      - name: Setup Node.js
+        uses: actions/setup-node@v2
         with:
-          node-version: "20"
+          node-version: '20'
 
-      - run: npm install # Or yarn install if you use Yarn
+      - name: Install Node.js dependencies
+        run: npm install
 
-      - run: npm run build # Or your specific Node.js build command
+      - name: Build Node.JS
+        run: npm run build
 
-      - run: ./vendor/bin/phpunit
+      - name: Run tests
+        run: ./vendor/bin/phpunit
 
-  laravel_job_status:
-    name: Report Job Status
+  notification:
+    name: Notification
     runs-on: ubuntu-latest
-    needs: [laravel_build, laravel_test] # Wait for both build and tests
+    needs: [laravel_build, laravel_test]
+    if: always() # Ensure this job runs even if previous jobs fail
 
     steps:
-      - uses: actions/checkout@v2
+      - name: Check Laravel Build status
+        if: ${{ needs.laravel_build.result == 'success' }}
+        run: echo "Laravel Build job succeeded"
 
-      - name: Get Job Statuses
-        run: |
-          build_status=$(curl ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/jobs/laravel_build/statuses)
-          test_status=$(curl ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/jobs/laravel_test/statuses)
+      - name: Check Laravel Test status
+        if: ${{ needs.laravel_test.result == 'success' }}
+        run: echo "Laravel Test job succeeded"
 
-          # Check statuses and output appropriate message
-          if [[ $build_status == 'completed' && $test_status == 'completed' ]]; then
-            echo "**Laravel Build and Tests Succeeded!**"
-          else
-            echo "**One or more jobs failed!** See details in the workflow logs."
-          fi
+      - name: Check Laravel Build status
+        if: ${{ needs.laravel_build.result == 'failure' }}
+        run: echo "Laravel Build job failed"
+
+      - name: Check Laravel Test status
+        if: ${{ needs.laravel_test.result == 'failure' }}
+        run: echo "Laravel Test job failed"
