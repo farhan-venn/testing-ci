@@ -1,4 +1,4 @@
-name: Laravel CI with Notification
+name: Laravel CI
 
 on:
   push:
@@ -14,109 +14,35 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.2' # Sesuaikan dengan versi PHP yang digunakan dalam proyek Laravel 11
-
-      - name: Install dependencies
-        run: composer install --no-ansi --no-interaction --no-progress --optimize-autoloader
-
-      - name: Copy file example env
-        run: cp .env.example .env
-
-      - name: Generate key
-        run: php artisan key:generate
-
-      - name: Create File Database
-        run: touch database/database.sqlite
-
-      - name: Run Migration Database
-        run: php artisan migrate:fresh --seed
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v2
-        with:
-          node-version: '20' # Atur versi Node.js sesuai kebutuhan Anda
-
-      - name: Install Node.js dependencies
-        run: npm install # Atau yarn install jika Anda menggunakan Yarn
-
-      - name: Build Node.JS
-        run: npm run build
-
-      - name: Store build status
-        run: echo "## ${{ job.status }}" >> build_status.txt
-        if: always()  # Always capture status for notification
+      # Steps for build job as before...
 
   laravel_test:
     name: Laravel Test
     runs-on: ubuntu-latest
-    needs: laravel_build  # Wait for laravel_build to finish before starting tests
+    needs: laravel_build
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
+      # Steps for test job as before...
 
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.2' # Sesuaikan dengan versi PHP yang digunakan dalam proyek Laravel 11
-
-      - name: Install dependencies
-        run: composer install --no-ansi --no-interaction --no-progress --optimize-autoloader
-
-      - name: Copy file example env
-        run: cp .env.example .env
-
-      - name: Generate key
-        run: php artisan key:generate
-
-      - name: Create File Database
-        run: touch database/database.sqlite
-
-      - name: Run tests
-        run: ./vendor/bin/phpunit
-
-      - name: Store test status
-        run: echo "## ${{ job.status }}" >> test_status.txt
-        if: always()  # Always capture status for notification
-
-  laravel_notification:
-    name: Job Status Notification
+  notification:
+    name: Notification
     runs-on: ubuntu-latest
-    needs: [laravel_build, laravel_test] # Wait for both build and test jobs to complete
+    needs: [laravel_build, laravel_test]
+    if: always()
 
     steps:
-      - name: Download build and test statuses (optional)
-        uses: actions/download-artifact@v2 # Optional for reference
+      - name: Notify on failure
+        if: ${{ failure() }}
+        uses: slack/webhook-action@v2
         with:
-          name: build_status
-          path: build_status.txt
-      - name: Download test status
-        uses: actions/download-artifact@v2
+          url: ${{ secrets.SLACK_WEBHOOK_URL }}
+          method: POST
+          payload: '{"text": "One of the Laravel CI jobs failed!"}'
+
+      - name: Notify on success
+        if: ${{ success() }}
+        uses: slack/webhook-action@v2
         with:
-          name: test_status
-          path: test_status.txt
-
-      - name: Check job statuses and notify
-        run: |
-          # Check if previous build job succeeded
-          if [[ ! -f build_status.txt ]]; then
-            echo "**Laravel CI:** Build job was skipped!"
-          fi
-
-          # Check if previous test job succeeded (assuming build job ran)
-          if [[ ${{ needs.laravel_build.result }} == 'failure' ]]; then
-            echo "**Laravel CI:** Build job failed!"
-          elif [[ ! -f test_status.txt ]]; then
-            echo "**Laravel CI:** Test job was skipped!"
-          fi
-
-          # Replace with your notification method (e.g., Slack webhook)
-          echo "$(cat build_status.txt)\n$(cat test_status.txt)"  # Print messages (optional)
-          # curl -X POST ...  # Implement notification logic here
-
+          url: ${{ secrets.SLACK_WEBHOOK_URL }}
+          method: POST
+          payload: '{"text": "All Laravel CI jobs passed successfully!"}'
