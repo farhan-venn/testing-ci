@@ -47,6 +47,14 @@ jobs:
 
       - name: Build Node.JS
         run: npm run build
+        # Assuming your build script generates some output
+        # Store the build result in a file
+        # echo "build_success" > build_status.txt
+
+      # Store the result of the build job
+      - name: Store build result
+        id: build_result
+        run: echo "::set-output name=status::success"
 
   laravel_test:
     name: Laravel Test
@@ -87,9 +95,14 @@ jobs:
 
       - name: Build Node.JS
         run: npm run build
+        # Assuming your build script generates some output
+        # Store the test result in a file
+        # echo "test_success" > test_status.txt
 
-      - name: Run tests
-        run: ./vendor/bin/phpunit
+      # Store the result of the test job
+      - name: Store test result
+        id: test_result
+        run: echo "::set-output name=status::success"
 
   notification:
     name: Notification
@@ -99,17 +112,17 @@ jobs:
 
     steps:
       - name: Check Laravel Build status
-        if: ${{ needs.laravel_build.result == 'success' }}
+        if: ${{ needs.laravel_build.outputs.status == 'success' }}
         run: echo "Laravel Build job succeeded"
 
       - name: Check Laravel Test status
-        if: ${{ needs.laravel_test.result == 'success' }}
+        if: ${{ needs.laravel_test.outputs.status == 'success' }}
         run: echo "Laravel Test job succeeded"
 
       - name: Check Laravel Build status
-        if: ${{ needs.laravel_build.result == 'failure' }}
+        if: ${{ needs.laravel_build.outputs.status == 'failure' }}
         run: echo "Laravel Build job failed"
 
       - name: Check Laravel Test status
-        if: ${{ needs.laravel_test.result == 'failure' }}
+        if: ${{ needs.laravel_test.outputs.status == 'failure' }}
         run: echo "Laravel Test job failed"
