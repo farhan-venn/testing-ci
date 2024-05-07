@@ -1,4 +1,4 @@
-name: Laravel CI
+name: Laravel CI with Slack Notifications
 
 on:
   push:
@@ -37,24 +37,19 @@ jobs:
       - name: Run Migration Database
         run: php artisan migrate:fresh --seed
 
+      # - name: Install Breeze
+      #   run: php artisan breeze:install --no-interaction
+
       - name: Setup Node.js
         uses: actions/setup-node@v2
         with:
           node-version: '20'
 
       - name: Install Node.js dependencies
-        run: npm install
+        run: npm install # Atau yarn install jika Anda menggunakan Yarn
 
       - name: Build Node.JS
         run: npm run build
-        # Assuming your build script generates some output
-        # Store the build result in a file
-        # echo "build_success" > build_status.txt
-
-      # Store the result of the build job
-      - name: Store build result
-        id: build_result
-        run: echo "::set-output name=status::success"
 
   laravel_test:
     name: Laravel Test
@@ -85,44 +80,52 @@ jobs:
       - name: Run Migration Database
         run: php artisan migrate:fresh --seed
 
+      # - name: Install Breeze
+      #   run: php artisan breeze:install --no-interaction
+
       - name: Setup Node.js
         uses: actions/setup-node@v2
         with:
           node-version: '20'
 
       - name: Install Node.js dependencies
-        run: npm install
+        run: npm install # Atau yarn install jika Anda menggunakan Yarn
 
-      - name: Build Node.JS
-        run: npm run build
-        # Assuming your build script generates some output
-        # Store the test result in a file
-        # echo "test_success" > test_status.txt
+      - name: Run tests
+        run: ./vendor/bin/phpunit
 
-      # Store the result of the test job
-      - name: Store test result
-        id: test_result
-        run: echo "::set-output name=status::success"
-
-  notification:
-    name: Notification
+  laravel_job_status:
+    name: Report Job Status and Send Slack Notification
     runs-on: ubuntu-latest
     needs: [laravel_build, laravel_test]
-    if: always() # Ensure this job runs even if previous jobs fail
-
+    on:
+      push:
+        branches: [ main ]
+      pull_request:
+        branches: [ main ]
     steps:
-      - name: Check Laravel Build status
-        if: ${{ needs.laravel_build.outputs.status == 'success' }}
-        run: echo "Laravel Build job succeeded"
+      - name: Get Job Statuses
+        run: |
+          build_status=$(curl ${{ github.action_url }}/workflows/${{ github.workflow }}/runs/${{ github.run_id }}/jobs/laravel_build/statuses)
+          test_status=$(curl ${{ github.action_url }}/workflows/${{ github.workflow }}/runs/${{ github.run_id }}/jobs/laravel_test/statuses)
 
-      - name: Check Laravel Test status
-        if: ${{ needs.laravel_test.outputs.status == 'success' }}
-        run: echo "Laravel Test job succeeded"
+      - name: Determine Notification Message
+        if: ${{ success() }}
+        run: |
+          if [[ $build_status == 'completed' && $test_status == 'completed' ]]; then
+            notification_message="**Laravel Build and Tests Succeeded!**"
+          else
+            notification_message="**One or more jobs failed! See details in the workflow logs.**"
+          fi
+        env:
+          NOTIFICATION_MESSAGE: ${{ steps.determine_notification_message.outputs.message }}
 
-      - name: Check Laravel Build status
-        if: ${{ needs.laravel_build.outputs.status == 'failure' }}
-        run: echo "Laravel Build job failed"
-
-      - name: Check Laravel Test status
-        if: ${{ needs.laravel_test.outputs.status == 'failure' }}
-        run: echo "Laravel Test job failed"
+      - name: Send Slack Notification
+        if: ${{ success() }}
+        uses: slack/slack@v3
+        with:
+          # Slack API token
+          token: ${{ secrets.SLACK_API_TOKEN }}
+          # Slack channel or webhook URL
+          channel: '#notifications'
+          text: "Job Status: ${{ env.NOTIFICATION_MESSAGE }} - Job **${{ job.name }}** completed on **${{ github.workflow }}** workflow."
