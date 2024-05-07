@@ -1,4 +1,4 @@
-name: Laravel CI
+name: Laravel CI with Notification
 
 on:
   push:
@@ -20,7 +20,7 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: "8.2"
+          php-version: '8.2' # Sesuaikan dengan versi PHP yang digunakan dalam proyek Laravel 11
 
       - name: Install dependencies
         run: composer install --no-ansi --no-interaction --no-progress --optimize-autoloader
@@ -40,18 +40,22 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v2
         with:
-          node-version: "20"
+          node-version: '20' # Atur versi Node.js sesuai kebutuhan Anda
 
       - name: Install Node.js dependencies
-        run: npm install
+        run: npm install # Atau yarn install jika Anda menggunakan Yarn
 
       - name: Build Node.JS
         run: npm run build
 
+      - name: Store build status
+        run: echo "## ${{ job.status }}" >> build_status.txt
+        if: always()  # Always capture status for notification
+
   laravel_test:
     name: Laravel Test
     runs-on: ubuntu-latest
-    needs: laravel_build
+    needs: laravel_build  # Wait for laravel_build to finish before starting tests
 
     steps:
       - name: Checkout code
@@ -60,7 +64,7 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: "8.2"
+          php-version: '8.2' # Sesuaikan dengan versi PHP yang digunakan dalam proyek Laravel 11
 
       - name: Install dependencies
         run: composer install --no-ansi --no-interaction --no-progress --optimize-autoloader
@@ -74,32 +78,47 @@ jobs:
       - name: Create File Database
         run: touch database/database.sqlite
 
-      - name: Run Migration Database
-        run: php artisan migrate:fresh --seed
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v2
-        with:
-          node-version: "20"
-
-      - name: Install Node.js dependencies
-        run: npm install
-
-      - name: Build Node.JS
-        run: npm run build
-
       - name: Run tests
         run: ./vendor/bin/phpunit
 
-  notify_result:
-    name: Notify Result
+      - name: Store test status
+        run: echo "## ${{ job.status }}" >> test_status.txt
+        if: always()  # Always capture status for notification
+
+  laravel_notification:
+    name: Job Status Notification
     runs-on: ubuntu-latest
-    needs: laravel_test
+    needs: [laravel_build, laravel_test]  # Wait for both build and test jobs to complete
+
     steps:
-      - name: Job success
-        if: always() && success()
-        run: echo "Laravel Test job completed successfully."
-      - name: Job failure
-        if: always() && failure()
-        run: echo "Laravel Test job failed."
-        
+      - name: Download build and test statuses
+        uses: actions/download-artifact@v2
+        with:
+          name: build_status
+          path: build_status.txt
+          name: test_status
+          path: test_status.txt
+
+      - name: Check job statuses and notify
+        run: |
+          build_status=$(cat build_status.txt)
+          test_status=$(cat test_status.txt)
+
+          # Customize notification message based on job statuses
+          message=""
+          if [[ $build_status == "## success" ]]; then
+            message="**Laravel CI:** Build job succeeded!"
+          else
+            message="**Laravel CI:** Build job failed!"
+          fi
+
+          if [[ $test_status == "## success" ]]; then
+            message+="\n**Laravel CI:** Test job succeeded!"
+          else
+            message+="\n**Laravel CI:** Test job failed!"
+          fi
+
+          # Replace with your notification method (e.g., Slack webhook)
+          echo "$message"  # Print message (example)
+          # curl -X POST ...  # Implement notification logic here
+
