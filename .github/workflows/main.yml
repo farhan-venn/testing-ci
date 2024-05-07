@@ -99,6 +99,11 @@ jobs:
     runs-on: ubuntu-latest
   
     steps:
+      - name: Debug needs
+        run: |
+          echo "laravel_build result: ${{ needs.laravel_build.result }}"
+          echo "laravel_test result: ${{ needs.laravel_test.result }}"
+  
       - name: Check previous job status
         if: always()  # Job akan selalu dijalankan, terlepas dari hasil job sebelumnya
         run: |
@@ -108,3 +113,4 @@ jobs:
             echo "At least one previous job failed."
             exit 1
           fi
+  
