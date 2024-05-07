@@ -14,85 +14,84 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
+      - uses: actions/checkout@v2
 
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
+      - uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.2' # Sesuaikan dengan versi PHP yang digunakan dalam proyek Laravel 11
+          php-version: '8.2'
 
-      - name: Install dependencies
-        run: composer install --no-ansi --no-interaction --no-progress --optimize-autoloader
+      - run: composer install --no-ansi --no-interaction --no-progress --optimize-autoloader
 
-      - name: Copy file example env
-        run: cp .env.example .env
+      - run: cp .env.example .env
 
-      - name: Generate key
-        run: php artisan key:generate
+      - run: php artisan key:generate
 
-      - name: Create File Database
-        run: touch database/database.sqlite
+      - run: touch database/database.sqlite
 
-      - name: Run Migration Database
-        run: php artisan migrate:fresh --seed
+      - run: php artisan migrate:fresh --seed
 
       # - name: Install Breeze
       #   run: php artisan breeze:install --no-interaction
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v2
+
+      - uses: actions/setup-node@v2
         with:
-          node-version: '20' # Atur versi Node.js sesuai kebutuhan Anda
+          node-version: '20'
 
-      - name: Install Node.js dependencies
-        run: npm install # Atau yarn install jika Anda menggunakan Yarn
+      - run: npm install  # Or yarn install if you use Yarn
 
-      - name: Build Node.JS
-        run: npm run build
+      - run: npm run build  # Or your specific Node.js build command
 
   laravel_test:
     name: Laravel Test
     runs-on: ubuntu-latest
-    needs: laravel_build
+    needs: laravel_build  # Ensures tests run after build
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
+      - uses: actions/checkout@v2
 
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
+      - uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.2' # Sesuaikan dengan versi PHP yang digunakan dalam proyek Laravel 11
+          php-version: '8.2'
 
-      - name: Install dependencies
-        run: composer install --no-ansi --no-interaction --no-progress --optimize-autoloader
+      - run: composer install --no-ansi --no-interaction --no-progress --optimize-autoloader
 
-      - name: Copy file example env
-        run: cp .env.example .env
+      - run: cp .env.example .env
 
-      - name: Generate key
-        run: php artisan key:generate
+      - run: php artisan key:generate
 
-      - name: Create File Database
-        run: touch database/database.sqlite
+      - run: touch database/database.sqlite
 
-      - name: Run Migration Database
-        run: php artisan migrate:fresh --seed
+      - run: php artisan migrate:fresh --seed
 
       # - name: Install Breeze
       #   run: php artisan breeze:install --no-interaction
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v2
+
+      - uses: actions/setup-node@v2
         with:
-          node-version: '20' # Atur versi Node.js sesuai kebutuhan Anda
+          node-version: '20'
 
-      - name: Install Node.js dependencies
-        run: npm install # Atau yarn install jika Anda menggunakan Yarn
+      - run: npm install  # Or yarn install if you use Yarn
 
-      - name: Build Node.JS
-        run: npm run build
+      - run: npm run build  # Or your specific Node.js build command
 
-      - name: Run tests
-        run: ./vendor/bin/phpunit
+      - run: ./vendor/bin/phpunit
+
+  laravel_job_status:
+    name: Report Job Status
+    runs-on: ubuntu-latest
+    needs: [laravel_build, laravel_test]  # Wait for both build and tests
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Get Job Statuses
+        run: |
+          build_status=$(curl ${{ github.action_url }}/workflows/${{ github.workflow }}/runs/${{ github.run_id }}/jobs/laravel_build/statuses)
+          test_status=$(curl ${{ github.action_url }}/workflows/${{ github.workflow }}/runs/${{ github.run_id }}/jobs/laravel_test/statuses)
+
+          # Check statuses and output appropriate message
+          if [[ $build_status == 'completed' && $test_status == 'completed' ]]; then
+            echo "**Laravel Build and Tests Succeeded!**"
+          else
+            echo "**One or more jobs failed!** See details in the workflow logs."
+          fi
