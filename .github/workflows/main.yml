@@ -96,6 +96,7 @@ jobs:
 
       - name: Run tests
         run: ./vendor/bin/phpunit
+        
   notification:
     name: Notification
     runs-on: ubuntu-latest
